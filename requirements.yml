@@ -1,0 +1,5 @@
+---
+roles:
+  - src: galaxyproject.pulsar
+  - src: geerlingguy.git
+  - src: geerlingguy.pip

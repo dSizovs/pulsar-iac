@@ -1,0 +1,35 @@
+---
+- name: Deploy and Configure Pulsar
+  hosts: pulsarservers
+  become: true
+  
+  pre_tasks:
+    - name: Update apt cache (Debian/Ubuntu only)
+      apt:
+        update_cache: yes
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Install prerequisite packages
+      apt:
+        name:
+          - software-properties-common
+          - python3-virtualenv
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Add Apptainer PPA
+      apt_repository:
+        repo: ppa:apptainer/ppa
+        state: present
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Install Apptainer
+      apt:
+        name: apptainer
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+  roles:
+    - role: geerlingguy.git
+    - role: geerlingguy.pip
+    - role: galaxyproject.pulsar

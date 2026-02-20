@@ -1,0 +1,2 @@
+[pulsarservers]
+192.168.2.4 ansible_user=ubuntu

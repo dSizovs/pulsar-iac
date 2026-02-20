@@ -1,0 +1,25 @@
+---
+pulsar_systemd: true
+pulsar_systemd_runner: webless
+
+pulsar_root: /opt/pulsar
+pulsar_server_dir: "{{ pulsar_root }}/server"
+pulsar_venv_dir: "{{ pulsar_root }}/venv"
+
+pulsar_optional_dependencies:
+  - amqp
+  - requests
+  - requests-toolbelt
+  - kombu
+
+pulsar_yaml_config:
+  staging_directory: "{{ pulsar_root }}/jobs_directory"
+  message_queue_url: "amqp://galaxy:{{ vault_rabbitmq_password }}@192.168.2.2:5672//"
+  
+  container_resolvers:
+    - type: apptainer
+  
+  managers:
+    _default_:
+      type: queued_python
+      num_concurrent_jobs: 2
