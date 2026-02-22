@@ -1,0 +1,17 @@
+gravity:
+  gunicorn:
+    enable: true
+    bind: 0.0.0.0:8080
+  celery:
+  handlers:
+    handler:
+      processes: 2
+      pools:
+        - job-handlers
+  gx_it_proxy:
+  tusd:
+  reports:
+galaxy:
+  galaxy_infrastructure_url: http://192.168.2.2:8080
+  job_config_file: config/job_conf.xml
+  amqp_internal_connection: amqp://galaxy:galaxy@192.168.2.2:5672//
