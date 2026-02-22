@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<job_conf>
+    <plugins>
+        <plugin id="local" type="runner" load="galaxy.jobs.runners.local:LocalJobRunner" workers="4"/>
+        <plugin id="pulsar_mq" type="runner" load="galaxy.jobs.runners.pulsar:PulsarMQJobRunner" workers="2">
+            <param id="amqp_url">amqp://galaxy:galaxy@192.168.2.2:5672//</param>
+        </plugin>
+    </plugins>
+
+    <handlers assign_with="db-skip-locked"/>
+
+    <routers>
+        <router id="tpv_dispatcher" type="tpv">
+            <param id="tpv_config_files">config/tpv_rules_local.yml</param>
+        </router>
+    </routers>
+
+    <destinations default="local_dest">
+        <destination id="local_dest" runner="local" />
+
+        <destination id="remote_pulsar" runner="pulsar_mq">
+            <param id="amqp_url">amqp://galaxy:galaxy@192.168.2.2:5672//</param>
+            <param id="jobs_directory">/opt/pulsar/jobs_directory</param>
+        </destination>
+    </destinations>
+</job_conf>
