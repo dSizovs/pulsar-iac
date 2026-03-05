@@ -5,15 +5,23 @@ global:
 destinations:
   local_dest:
     runner: local
-    tags:
-      - local_dest
-  remote_pulsar:
+
+  nemo_cluster:
     runner: pulsar_mq
-    tags:
-      - remote_pulsar
+    scheduling:
+      require:
+        - nemo_cluster
+    params:
+      amqp_url: amqp://galaxy:galaxy@localhost:5672//
+      jobs_directory: /home/fr/fr_ds722/pulsar/jobs_directory
+      submit_native_specification: -p cpu --mem=1G
+      default_file_action: remote_transfer
+      transport: requests
 
 tools:
   default:
+    cores: 1
+    mem: 1
     scheduling:
       require:
         - local_dest
@@ -21,4 +29,4 @@ tools:
   ChangeCase:
     scheduling:
       require:
-        - remote_pulsar
+        - nemo_cluster
