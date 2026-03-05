@@ -1,0 +1,8 @@
+log_level: DEBUG
+message_queue_url: amqp://galaxy:galaxy@localhost:5672//
+staging_directory: /home/fr/fr_ds722/pulsar/jobs_directory
+
+managers:
+  _default_:
+    type: queued_python
+    external_run_type: slurm
