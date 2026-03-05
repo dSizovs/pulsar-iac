@@ -5,28 +5,37 @@ global:
 destinations:
   local_dest:
     runner: local
+    max_accepted_cores: 2
+    max_accepted_mem: 4
 
   nemo_cluster:
     runner: pulsar_mq
-    scheduling:
-      require:
-        - nemo_cluster
+    max_accepted_cores: 16
+    max_accepted_mem: 32
     params:
+      singularity_enabled: true
+      # Mount the job's tmp directory to /tmp inside the container so Java can draw images
+      singularity_volumes: "$job_directory:rw,$working_directory:rw,$job_directory/tmp:/tmp:rw"
+      
       amqp_url: amqp://galaxy:galaxy@localhost:5672//
       jobs_directory: /home/fr/fr_ds722/pulsar/jobs_directory
-      submit_native_specification: -p cpu --mem=1G
+      submit_native_specification: -p cpu --mem=4G -c 4
       default_file_action: remote_transfer
       transport: requests
+      galaxy_url: http://localhost:8080
 
 tools:
   default:
     cores: 1
     mem: 1
-    scheduling:
-      require:
-        - local_dest
 
   ChangeCase:
+    cores: 1
+    mem: 1
     scheduling:
       require:
         - nemo_cluster
+
+  ".*fastqc.*":
+    cores: 4
+    mem: 8
