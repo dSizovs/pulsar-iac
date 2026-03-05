@@ -12,6 +12,10 @@ gravity:
   tusd:
   reports:
 galaxy:
+  admin_users: dima@local.hpc
   galaxy_infrastructure_url: http://192.168.2.2:8080
   job_config_file: config/job_conf.xml
   amqp_internal_connection: amqp://galaxy:galaxy@192.168.2.2:5672//
+
+  # Let Pulsar and Apptainer handle dependencies remotely
+  default_job_external_setup: true
