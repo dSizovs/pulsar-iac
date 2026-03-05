@@ -6,10 +6,11 @@ This repository contains the Infrastructure as Code (IaC) and core configuration
 ## Architecture Overview
 * **Master Node:** Galaxy 23.x+ running with dedicated Celery job handlers managed via Gravity.
 * **Message Broker:** RabbitMQ handling job dispatch, heartbeats, and status callbacks via the `pulsar_mq` plugin.
-* **Job Router:** Total Perspective Vortex (TPV) dynamically routing specific tools to distinct execution environments.
+* **Job Router:** Total Perspective Vortex (TPV) performing dynamic, resource-based routing (e.g., automatically routing heavy bioinformatics tools to the HPC while keeping light jobs local).
 * **Network Bridge:** Double-barrel reverse SSH tunnels (Ports 5672 & 8080) bypassing strict HPC firewalls to route AMQP and HTTP file transfers.
-* **Compute Nodes:** Remote Pulsar workers executing isolated jobs on Slurm using rootless Apptainer containers.
+* **Compute Nodes:** Remote Pulsar workers executing isolated jobs on Slurm using rootless Apptainer containers, complete with strict directory bind-mounting for Java-based tool compatibility.
 
+  
 ## Repository Structure
 * `pulsar.yml` & `group_vars/`: Ansible playbooks and variables to automate the deployment of baseline Pulsar nodes and RabbitMQ.
 * `galaxy_configs/`: Core Galaxy configurations required for distributed compute:
