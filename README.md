@@ -1,36 +1,30 @@
 # Galaxy-Pulsar Distributed Compute Cluster
 
-This repository contains the Infrastructure as Code (IaC) and core configuration files for a production-grade Galaxy server routing jobs to remote HPC compute nodes (via Slurm) using Pulsar and AMQP (RabbitMQ).
+Infrastructure and configuration for routing Galaxy jobs to a remote HPC (NEMO/Slurm) using the experimental **pulsar-relay** mode; no RabbitMQ or AMQP required.
 
+## Architecture
+Galaxy (VM:8080) -> pulsar-relay (VM:9000) -> SSH tunnel -> Pulsar (NEMO) -> Slurm -> NEMO localhost:9555
 
-## Architecture Overview
-* **Master Node:** Galaxy 23.x+ running with dedicated Celery job handlers managed via Gravity.
-* **Message Broker:** RabbitMQ handling job dispatch, heartbeats, and status callbacks via the `pulsar_mq` plugin.
-* **Job Router:** Total Perspective Vortex (TPV) performing dynamic, resource-based routing (e.g., automatically routing heavy bioinformatics tools to the HPC while keeping light jobs local).
-* **Network Bridge:** Double-barrel reverse SSH tunnels (Ports 5672 & 8080) bypassing strict HPC firewalls to route AMQP and HTTP file transfers.
-* **Compute Nodes:** Remote Pulsar workers executing isolated jobs on Slurm using rootless Apptainer containers, complete with strict directory bind-mounting for Java-based tool compatibility.
+File transfers go directly between Pulsar and Galaxy via HTTP, bypassing the relay.
 
-  
-## Repository Structure
-* `pulsar.yml` & `group_vars/`: Ansible playbooks and variables to automate the deployment of baseline Pulsar nodes and RabbitMQ.
-* `galaxy_configs/`: Core Galaxy configurations required for distributed compute:
-  * `galaxy.yml`: Defines Gravity process management, job handler threads, and internal AMQP listeners.
-  * `job_conf.xml`: Job configuration defining the TPV dispatcher, runner plugins, and tunnel URLs.
-  * `tpv_rules_local.yml`: Dynamic routing rules mapping tools (e.g., `ChangeCase`) to specific HPC destinations with `requests` transport.
-* `nemo_config/`: Manual worker configuration (`app.yml`) required for deployment on strictly firewalled, 2FA-secured HPC clusters where Ansible cannot reach.
+## How to Run
 
-## HPC Deployment & Execution
-When routing to a strictly firewalled HPC cluster, the connection relies on an active SSH tunnel. Ensure Galaxy is running, then execute the following:
-
-**1. Open the Reverse Tunnels (From Local Machine):**
+**1. Start the relay (Galaxy VM):**
 ```bash
-IP=$(multipass info vm-galaxy --format json | jq -r '.info."vm-galaxy".ipv4[0]')
-ssh -R 5672:$IP:5672 -R 8080:$IP:8080 username@login.nemo.uni-freiburg.de
+cd ~/pulsar-relay && python start_relay.py
 ```
 
-**2. Start the Webless AMQP Worker (On Remote HPC):**
+**2. Open SSH tunnel (local machine):**
 ```bash
-cd pulsar
-source .venv/bin/activate
-pulsar-main --app_conf_path config/app.yml
+ssh -R 9555:<vm-ip>:9000 -R 8080:<vm-ip>:8080 username@login.nemo.uni-freiburg.de
+```
+
+**3. Start Pulsar (NEMO):**
+```bash
+cd pulsar && source .venv/bin/activate && pulsar-main --app_conf_path config/app.yml
+```
+
+**4. Start Galaxy (VM):**
+```bash
+cd ~/galaxy && sh run.sh
 ```
