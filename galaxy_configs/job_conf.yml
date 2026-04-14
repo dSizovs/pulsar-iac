@@ -1,0 +1,23 @@
+runners:
+  local:
+    load: galaxy.jobs.runners.local:LocalJobRunner
+    workers: 2
+  pulsar:
+    load: galaxy.jobs.runners.pulsar:PulsarMQJobRunner
+    relay_url: "http://localhost:9000"
+    relay_username: "admin"
+    relay_password: "password"
+
+execution:
+  default: local_env
+  environments:
+    local_env:
+      runner: local
+    nemo_relay:
+      runner: pulsar
+      url: "http://192.168.2.1:8080"
+      jobs_directory: /home/fr/fr_ds722/pulsar/jobs_directory
+
+tools:
+  - id: ChangeCase
+    environment: nemo_relay
