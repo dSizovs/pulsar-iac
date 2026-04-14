@@ -28,3 +28,39 @@ cd pulsar && source .venv/bin/activate && pulsar-main --app_conf_path config/app
 ```bash
 cd ~/galaxy && sh run.sh
 ```
+
+## Manual Code Patches Required
+
+Phase 4 uses pulsar-relay which is brand-new and not yet fully supported 
+in stable releases. Two manual patches are required:
+
+**1. Upgrade pulsar-app to dev version (on Galaxy VM):**
+```bash
+~/galaxy/.venv/bin/pip install git+https://github.com/galaxyproject/pulsar.git
+```
+
+**2. Patch Galaxy's Pulsar runner to accept relay parameters:**
+
+File: `~/galaxy/lib/galaxy/jobs/runners/pulsar.py`
+
+Find the `PULSAR_PARAM_SPECS` dict and add after the `amqp_key_prefix` block:
+```python
+    relay_url=dict(
+        map=specs.to_str_or_none,
+        default=None,
+    ),
+    relay_username=dict(
+        map=specs.to_str_or_none,
+        default=None,
+    ),
+    relay_password=dict(
+        map=specs.to_str_or_none,
+        default=None,
+    ),
+    relay_topic_prefix=dict(
+        map=specs.to_str_or_none,
+        default=None,
+    ),
+```
+
+> **Note:** If you're on a newer Galaxy release, this patch may not be needed
