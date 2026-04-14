@@ -17,7 +17,6 @@ destinations:
       # Mount the job's tmp directory to /tmp inside the container so Java can draw images
       singularity_volumes: "$job_directory:rw,$working_directory:rw,$job_directory/tmp:/tmp:rw"
       
-      amqp_url: amqp://galaxy:galaxy@localhost:5672//
       jobs_directory: /home/fr/fr_ds722/pulsar/jobs_directory
       submit_native_specification: -p cpu --mem=4G -c 4
       default_file_action: remote_transfer
