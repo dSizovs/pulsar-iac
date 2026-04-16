@@ -17,6 +17,10 @@ execution:
       runner: pulsar
       url: "http://192.168.2.1:8080"
       jobs_directory: /home/fr/fr_ds722/pulsar/jobs_directory
+      singularity_enabled: true
+      singularity_command: apptainer
+      singularity_default_container_id: /cvmfs/singularity.galaxyproject.org/all/perl:5.26
+      singularity_volumes: "$job_directory:rw,$tool_directory:ro,$job_directory/outputs:rw,$job_directory/working:rw"
 
 tools:
   - id: ChangeCase
