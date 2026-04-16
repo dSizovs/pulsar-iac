@@ -1,0 +1,4 @@
+- type: explicit_singularity
+- type: cached_mulled_singularity
+  cache_directory: /cvmfs/singularity.galaxyproject.org/all
+  cache_directory_cacher_type: uncached
