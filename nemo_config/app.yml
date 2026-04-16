@@ -5,6 +5,8 @@ message_queue_username: admin
 message_queue_password: password
 staging_directory: /home/fr/fr_ds722/pulsar/jobs_directory
 
+singularity_no_mount: tool-data
+
 container_resolvers:
   - type: apptainer
 
