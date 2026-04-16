@@ -13,7 +13,7 @@ gravity:
   reports:
 galaxy:
   admin_users: dima@local.hpc
-  galaxy_infrastructure_url: http://192.168.2.2:8080
+  galaxy_infrastructure_url: http://192.168.2.1:8080
   job_config_file: config/job_conf.yml
-
   default_job_external_setup: true
+  container_resolvers_config_file: /home/ubuntu/galaxy/config/container_resolvers.yml
