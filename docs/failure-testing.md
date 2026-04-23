@@ -39,7 +39,7 @@ Result: 100/100 jobs completed at ~1 job/4 seconds with no errors. One transient
 1. Submit 100 jobs
 2. Once `active > 50`, kill Pulsar: `pkill -f pulsar-main`
 3. Wait 60 seconds
-4. Restart Pulsar: `nohup pulsar-main --app_conf_path config/app.yml > pulsar.log 2>&1 &`
+4. Restart Pulsar (without wiping job directories): `nohup pulsar-main --app_conf_path config/app.yml > pulsar.log 2>&1 &`
 
 ### Observations
 
@@ -48,12 +48,13 @@ Result: 100/100 jobs completed at ~1 job/4 seconds with no errors. One transient
 - Jobs already completed before Pulsar died: ✅ unaffected
 - After Pulsar restart: jobs did **not** auto-resume
 - Galaxy was stuck polling for status updates from a `queued` job that Pulsar had no memory of
-- Manually deleting the stuck `queued` job via the API unblocked the remaining `new` jobs
+- A single stuck `queued` job blocked all subsequent `new` jobs from being dispatched
+- Manually deleting the stuck `queued` job via the API unblocked the queue
 - The `resubmit` rule in `job_conf.yml` fired correctly (3 retries, 30s delay) but ultimately gave up → jobs moved to `paused`
 
 ### Key Finding
 
-> **Pulsar going down causes jobs to freeze. Recovery is not automatic. A stuck `queued` job can block all subsequent `new` jobs from being dispatched. Manual intervention required.**
+> **Pulsar going down causes jobs to freeze. Recovery is not automatic. A stuck `queued` job can block all subsequent `new` jobs. Manual intervention required.**
 
 ### Recovery Steps
 
@@ -101,7 +102,7 @@ Monitor output at relay stop:
 16:58:51  galaxy=OK  relay=DOWN active=94  paused=0  ok=10   ← relay stopped
 ...
 16:59:19  galaxy=OK  relay=OK   active=94  paused=0  ok=10   ← relay back
-16:59:21  galaxy=OK  relay=OK   active=93  paused=0  ok=11   ← jobs resuming
+16:59:21  galaxy=OK  relay=OK   active=93  paused=0  ok=11   ← jobs resuming automatically
 ```
 
 - Jobs froze immediately when relay went down
@@ -112,11 +113,16 @@ Monitor output at relay stop:
 
 ### Key Finding
 
-> **Relay going down freezes jobs but recovery is fully automatic. Both Galaxy and Pulsar re-authenticate and resume within seconds of the relay coming back. Zero jobs lost.**
+> **Graceful relay restart = full automatic recovery. Both Galaxy and Pulsar re-authenticate within seconds. Zero jobs lost, zero manual intervention.**
 
-### Important Caveat
+### Important Caveat: Graceful vs Crash
 
-The relay uses **in-memory storage** by default. If the relay process is killed (not gracefully stopped), any in-flight messages are lost and jobs may need to be resubmitted. 
+This result applies to **graceful** relay restarts (`systemctl stop/start`). If the relay is killed ungracefully (OOM, `kill -9`):
+
+- In-memory JWT tokens are invalidated
+- In-memory queued messages are lost
+- Both Galaxy and Pulsar need to be restarted to re-authenticate
+- Jobs dispatched to the relay but not yet picked up by Pulsar may be lost
 
 **Production recommendation: configure Valkey persistent storage:**
 
@@ -146,19 +152,18 @@ Monitor output:
 10:25:07  galaxy=OK    active=90  paused=0  ok=10
 10:25:12  galaxy=DOWN  active=0   paused=0  ok=0    ← Galaxy down
 ...
-10:26:03  galaxy=OK    active=90  paused=0  ok=10   ← Galaxy back, jobs recovered
-10:26:08  galaxy=OK    active=90  paused=0  ok=10
+10:26:03  galaxy=OK    active=90  paused=0  ok=10   ← Galaxy back, jobs recovered from DB
 10:26:13  galaxy=OK    active=89  paused=0  ok=11   ← jobs resuming
 ```
 
-- Galaxy down = API immediately unreachable (monitor shows `galaxy=DOWN`)
+- Galaxy down = API immediately unreachable (`galaxy=DOWN` in monitor)
 - On restart, Galaxy **automatically recovered all pending jobs from the SQLite database**
-- Jobs that had already been dispatched to Pulsar continued running on NEMO uninterrupted
-- Jobs resumed processing automatically after restart
+- Jobs already dispatched to Pulsar continued running on NEMO uninterrupted during the outage
+- Jobs resumed processing automatically after restart — `ok` count ticked up within seconds
 
 ### Edge Case: Unassigned Jobs
 
-If Galaxy crashes during job submission (between writing the job to DB and assigning it to a handler), jobs can be left with `handler = NULL`. These jobs are **not** automatically picked up after restart.
+If Galaxy crashes mid-submission (between writing the job to DB and assigning it to a handler), jobs are left with `handler = NULL`. These are **not** automatically picked up after restart.
 
 ```bash
 # Detect unassigned jobs
@@ -168,17 +173,15 @@ import sys, json
 jobs = json.load(sys.stdin)
 unassigned = [j for j in jobs if j.get('handler') is None]
 print(f'{len(unassigned)} unassigned jobs')"
-```
 
-Fix: update the handler assignment directly in the SQLite database:
-```bash
+# Fix: reassign via SQLite
 sqlite3 ~/galaxy/database/galaxy.sqlite \
-  "UPDATE job SET handler='main.1' WHERE state='new' AND handler IS NULL;"
+  \"UPDATE job SET handler='main.1' WHERE state='new' AND handler IS NULL;\"
 ```
 
 ### Key Finding
 
-> **Galaxy restart results in full automatic recovery from the database. Jobs resume processing without manual intervention. Exception: jobs submitted during the crash window may have NULL handler and require manual DB intervention.**
+> **Galaxy restart = full automatic recovery from the database. Jobs resume without manual intervention. Exception: jobs submitted during the crash window may have NULL handler and require a direct DB fix.**
 
 ---
 
@@ -186,14 +189,17 @@ sqlite3 ~/galaxy/database/galaxy.sqlite \
 
 | Scenario | Jobs frozen? | Auto-recovery? | Jobs lost? | Manual action needed? |
 |---|---|---|---|---|
-| Pulsar down | ✅ Yes | ❌ No | ❌ No (paused) | Resume paused jobs, delete stuck queued job |
-| Relay down | ✅ Yes | ✅ Yes | ❌ No | None (with graceful restart) |
+| Pulsar down | ✅ Yes | ❌ No | ❌ No (paused) | Delete stuck queued job, resume paused jobs |
+| Relay down (graceful) | ✅ Yes | ✅ Yes | ❌ No | None |
+| Relay down (crash) | ✅ Yes | ❌ No | ⚠️ Possible | Restart Galaxy + Pulsar, resubmit lost jobs |
 | Galaxy down | ✅ Yes | ✅ Yes | ❌ No* | None (*unless crash during submission) |
+
+---
 
 ## Production Recommendations
 
-1. **Valkey storage for relay** — prevents message loss on relay restart/crash
-2. **Watchdog for paused jobs** — auto-resume paused jobs when Pulsar comes back
-3. **Galaxy job timeout** — configure a timeout for running jobs so they don't wait indefinitely if Pulsar disappears without reporting
-4. **Pulsar systemd service on NEMO** — currently run manually; should be a systemd service for auto-restart
-5. **Persistent relay** — already done via systemd on bw-cloud
+1. **Valkey storage for relay** — prevents message loss on relay crash; makes recovery seamless
+2. **Watchdog for paused jobs** — auto-resume paused jobs when Pulsar comes back online
+3. **Galaxy job timeout** — Galaxy currently waits indefinitely for running jobs; configure a timeout so stuck jobs are detected and resubmitted
+4. **Pulsar as systemd service on NEMO** — currently run manually; should auto-restart on failure
+5. **Relay already persistent** — systemd service on bw-cloud VM, survives reboots ✅
