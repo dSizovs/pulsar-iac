@@ -1,2 +1,5 @@
 [pulsarservers]
 192.168.2.4 ansible_user=ubuntu
+
+[relayservers]
+192.52.32.144 ansible_user=ubuntu

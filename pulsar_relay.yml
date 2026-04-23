@@ -1,0 +1,6 @@
+---
+- name: Deploy Pulsar Relay
+  hosts: relayservers
+  become: true
+  roles:
+    - role: pulsar_relay
