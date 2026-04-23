@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Failure-test monitor for Galaxy -> pulsar-relay -> Pulsar.
 
@@ -26,8 +27,16 @@ GALAXY_URL = "http://localhost:8080"
 API_KEY = "158f39b893d924af6af674b6ce7b3efb"
 DEFAULT_HISTORY = "2d9035b3fc152403"
 
+# Component endpoints to probe for liveness (TCP connect only, no auth needed)
 RELAY_HOST = "192.52.32.144"
 RELAY_PORT = 9000
+# Pulsar on NEMO login2 is not directly reachable from Galaxy VM in your topology
+# (that's the whole point of the relay), so we skip a direct Pulsar probe here.
+# If you want Pulsar liveness, SSH-exec `pgrep -f pulsar-main` on NEMO from a
+# sidecar script, or have the relay expose an upstream-health endpoint.
+
+# All Galaxy job states worth tracking. 'paused' is the important one for
+# Scenario 1 (Pulsar down) — do NOT drop it.
 JOB_STATES = [
     "new", "waiting", "queued", "running",
     "paused", "stopped",
@@ -54,6 +63,7 @@ def get_job_states(history_id: str) -> tuple[dict, bool, float]:
     counts = {s: 0 for s in JOB_STATES}
     t0 = time.monotonic()
     try:
+        # One call, filter client-side -> atomic snapshot, no per-state races.
         r = requests.get(
             f"{GALAXY_URL}/api/jobs",
             params={"history_id": history_id, "limit": 1000},
@@ -122,6 +132,7 @@ def main() -> int:
                 w.writerow(row)
                 f.flush()
 
+                # Compact stdout summary
                 active = counts["new"] + counts["queued"] + counts["running"]
                 print(
                     f"{now}  galaxy={'OK' if galaxy_ok else 'DOWN':4}  "

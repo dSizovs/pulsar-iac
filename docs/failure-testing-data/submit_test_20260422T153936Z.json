@@ -1,0 +1,20 @@
+{
+  "scenario": "test",
+  "count_requested": 1,
+  "count_succeeded": 1,
+  "count_failed": 0,
+  "history_id": "e85a3be143d5905b",
+  "dataset_id": "557f8181ed1e3542",
+  "started_at": "2026-04-22T15:39:36.480160+00:00",
+  "finished_at": "2026-04-22T15:39:36.480160+00:00",
+  "records": [
+    {
+      "index": 1,
+      "submitted_at": "2026-04-22T15:39:36.480160+00:00",
+      "job_id": "d1d57aaa1bf6084b",
+      "http_status": 200,
+      "latency_ms": 43.6,
+      "error": null
+    }
+  ]
+}

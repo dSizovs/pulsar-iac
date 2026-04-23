@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Submit N identical ChangeCase jobs for failure-testing.
 
@@ -17,7 +18,7 @@ import requests
 GALAXY_URL = "http://localhost:8080"
 API_KEY = "158f39b893d924af6af674b6ce7b3efb"
 
-# update after running new_stress_history.py:
+# UPDATE THESE after running new_stress_history.py:
 HISTORY_ID = "2d9035b3fc152403"
 INPUT_DATASET_ID = "95fa410213cac0ea"
 
@@ -25,6 +26,8 @@ HEADERS = {"x-api-key": API_KEY, "Content-Type": "application/json"}
 
 
 def submit_one(index: int) -> dict:
+    # Nested input dict — the flat `input|src`/`input|id` form makes Galaxy
+    # auto-chain outputs of previous jobs as inputs for subsequent ones.
     payload = {
         "tool_id": "ChangeCase",
         "history_id": HISTORY_ID,

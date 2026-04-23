@@ -1,0 +1,9 @@
+timestamp,scenario,new,waiting,queued,running,paused,stopped,ok,error,deleted,upload,galaxy_ok,galaxy_latency_ms,relay_ok
+2026-04-22T16:19:40.274405+00:00,baseline,0,0,0,0,0,0,0,0,0,0,True,7.3,True
+2026-04-22T16:19:42.344597+00:00,baseline,0,0,0,0,0,0,0,0,0,0,True,21.4,True
+2026-04-22T16:19:44.405315+00:00,baseline,0,0,0,0,0,0,0,0,0,0,True,23.3,True
+2026-04-22T16:19:46.447308+00:00,baseline,0,0,0,0,0,0,0,0,0,0,True,21.9,True
+2026-04-22T16:19:48.480697+00:00,baseline,0,0,0,0,0,0,0,0,0,0,True,11.9,True
+2026-04-22T16:19:50.553637+00:00,baseline,0,0,0,0,0,0,0,0,0,0,True,24.4,True
+2026-04-22T16:19:52.616789+00:00,baseline,0,0,0,0,0,0,0,0,0,0,True,22.7,True
+2026-04-22T16:19:54.693499+00:00,baseline,0,0,0,0,0,0,0,0,0,0,True,23.8,True

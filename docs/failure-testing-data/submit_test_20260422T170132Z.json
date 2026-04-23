@@ -1,0 +1,20 @@
+{
+  "scenario": "test",
+  "count_requested": 1,
+  "count_succeeded": 0,
+  "count_failed": 1,
+  "history_id": "417e33144b294c21",
+  "dataset_id": "51a3f0b7ba7c9f16",
+  "started_at": "2026-04-22T17:01:32.712105+00:00",
+  "finished_at": "2026-04-22T17:01:32.712105+00:00",
+  "records": [
+    {
+      "index": 1,
+      "submitted_at": "2026-04-22T17:01:32.712105+00:00",
+      "job_id": null,
+      "http_status": 400,
+      "latency_ms": 43.2,
+      "error": "{\"err_msg\": \"Parameter 'input': specify a dataset of the required format / build for parameter\", \"err_code\": 400008, \"err_data\": {\"input\": \"Parameter 'input': specify a dataset of the required format "
+    }
+  ]
+}
