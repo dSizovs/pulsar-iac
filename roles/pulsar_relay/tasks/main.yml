@@ -1,4 +1,10 @@
 ---
+- name: Install Valkey via snap
+  community.general.snap:
+    name: valkey
+    channel: edge
+  when: pulsar_relay_storage_backend == "valkey"
+
 - name: Install Python3 and venv
   apt:
     name:
