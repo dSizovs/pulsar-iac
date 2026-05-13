@@ -9,3 +9,5 @@ pulsar_relay_admin_password: "change_me_in_production"
 pulsar_relay_admin_email: "admin@example.com"
 pulsar_relay_storage_backend: "memory"
 pulsar_relay_log_level: "INFO"
+pulsar_relay_valkey_host: "localhost"
+pulsar_relay_valkey_port: 6379
